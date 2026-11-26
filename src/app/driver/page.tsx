@@ -6,6 +6,8 @@ import { useLocation, useSession } from "@/lib/useSession";
 import { DEFAULT_POS, errText, rupees } from "@/lib/format";
 import { STATUS_LABEL, TRIP_LABEL, type Booking } from "@/lib/types";
 import { Shell, Notice } from "@/components/Shell";
+import { Tabs } from "@/components/ui/Stat";
+import { DriverEarnings } from "@/components/DriverEarnings";
 import { Map } from "@/components/Map";
 
 interface DriverRow { status: "pending" | "approved" | "blocked"; is_online: boolean; rating_sum: number; rating_count: number }
@@ -16,6 +18,7 @@ export default function DriverPage() {
   const [open, setOpen] = useState<Booking[]>([]);
   const [mine, setMine] = useState<Booking[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [tab, setTab] = useState<"drive" | "earnings">("drive");
   const online = me?.is_online ?? false;
   const { pos } = useLocation(online);
   const here = pos ?? DEFAULT_POS;
@@ -70,10 +73,14 @@ export default function DriverPage() {
   const current = mine.find((b) => b.status === "accepted" || b.status === "started");
   const done = mine.filter((b) => b.status === "completed");
   const today = done.filter((b) => new Date(b.completed_at!).toDateString() === new Date().toDateString());
-  const earn = (list: Booking[]) => list.reduce((s, b) => s + Math.round(b.quoted_paise * 0.85), 0); // after 15% platform fee
+  // The server saves the driver's share on each completed trip.
+  const earn = (list: Booking[]) => list.reduce((s, b) => s + ((b as Booking & { driver_earning_paise?: number | null }).driver_earning_paise ?? Math.round(b.quoted_paise * 0.85)), 0);
 
   return (
     <Shell title="Driver" onSignOut={signOut}>
+      <Tabs<"drive" | "earnings"> value={tab} onChange={setTab} tabs={[{ id: "drive", label: "Drive" }, { id: "earnings", label: "Earnings & account" }]} />
+      {tab === "earnings" && <DriverEarnings />}
+      {tab === "drive" && (<>
       {me.status !== "approved" && (
         <div className="card mb-6 border-gold/40">
           <p className="font-semibold text-gold">{me.status === "pending" ? "Your documents are being checked" : "Your account is blocked"}</p>
@@ -114,6 +121,7 @@ export default function DriverPage() {
           )}
         </div>
       </div>
+      </>)}
     </Shell>
   );
 }
@@ -136,7 +144,14 @@ function CurrentTrip({ b, act }: { b: Booking; act: (fn: string, a: Record<strin
           <button className="btn-ghost w-full" onClick={() => act("cancel_booking", { p_booking: b.id, p_reason: "Driver cancelled" })}>Cancel</button>
         </>
       ) : (
-        <button className="btn-gold w-full" onClick={() => act("complete_trip", { p_booking: b.id })}>End trip</button>
+        <>
+          <p className="text-sm text-gray-400">End the trip — how did the customer pay?</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button className="btn-gold" onClick={() => act("complete_trip", { p_booking: b.id, p_method: "cash" })}>Cash</button>
+            <button className="btn-ghost" onClick={() => act("complete_trip", { p_booking: b.id, p_method: "upi" })}>UPI</button>
+          </div>
+          <p className="text-xs text-gray-500">Cash: you keep the money and owe Saarthi its commission.</p>
+        </>
       )}
     </div>
   );

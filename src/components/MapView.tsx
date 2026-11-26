@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Tooltip, Circle, useMap } from "react-
 import L from "leaflet";
 import { useEffect } from "react";
 
-export interface Pin { id: string; lat: number; lng: number; label: string; kind: "me" | "driver" | "pickup" }
+export interface Pin { id: string; lat: number; lng: number; label: string; kind: "me" | "driver" | "pickup" | "busy" }
 
 const icon = (kind: Pin["kind"]) =>
   L.divIcon({
@@ -11,7 +11,9 @@ const icon = (kind: Pin["kind"]) =>
     iconSize: [34, 34],
     iconAnchor: [17, 17],
     html:
-      kind === "driver"
+      kind === "busy"
+        ? `<div style="width:34px;height:34px;border-radius:50%;background:#3b82f6;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(59,130,246,.25);font-size:17px">🚙</div>`
+        : kind === "driver"
         ? `<div style="width:34px;height:34px;border-radius:50%;background:#f5b544;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(245,181,68,.25);font-size:17px">🚗</div>`
         : kind === "pickup"
           ? `<div style="width:34px;height:34px;border-radius:50%;background:#22c55e;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(34,197,94,.25);font-size:16px">📍</div>`
