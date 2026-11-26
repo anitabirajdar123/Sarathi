@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-ink: #0b0f17;
+  --color-panel: #121826;
+  --color-line: #1f2937;
+  --color-gold: #f5b544;
+}
+
+html, body { background: #0b0f17; color: #e5e7eb; }
+body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
+
+@utility card { @apply rounded-2xl border border-line bg-panel/80 backdrop-blur p-5; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed; }
+@utility btn-gold { @apply btn bg-gold text-ink hover:brightness-110; }
+@utility btn-ghost { @apply btn border border-line text-gray-200 hover:bg-white/5; }
+@utility input { @apply w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-gray-100 outline-none focus:border-gold; }
+@utility label { @apply mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400; }
+.leaflet-container { background: #0b0f17; border-radius: 1rem; }
+
+/* Free OpenStreetMap tiles, turned dark to match the app. */
+.dark-tiles { filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9) saturate(0.6); }
