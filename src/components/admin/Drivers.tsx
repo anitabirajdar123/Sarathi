@@ -1,15 +1,17 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Ban, Search, X, Phone, Star, HandCoins } from "lucide-react";
+import { Check, Ban, Search, X, Phone, Star, HandCoins, BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { errText, rupees } from "@/lib/format";
 import { STATUS_LABEL, TRIP_LABEL, type BookingStatus, type TripType } from "@/lib/types";
 import { Badge } from "@/components/ui/Stat";
 import { Notice } from "@/components/Shell";
+import { DocsReview, PayoutForm } from "./DriverExtras";
 
 export interface AdminDriver {
   id: string; full_name: string; phone: string | null; licence_no: string; experience_years: number;
   city: string; status: "pending" | "approved" | "blocked"; is_online: boolean; trips: number; created_at: string;
+  verified: boolean; docs_pending: boolean; photo_path: string | null;
 }
 
 interface Detail {
@@ -21,7 +23,7 @@ interface Detail {
     driver_earning_paise: number | null; status: BookingStatus; rating: number | null; created_at: string }[];
 }
 
-const statusTone = { approved: "green", pending: "gold", blocked: "red" } as const;
+const statusTone = { approved: "green", pending: "brand", blocked: "red" } as const;
 
 export function Drivers({ drivers, reload }: { drivers: AdminDriver[]; reload: () => void }) {
   const [q, setQ] = useState("");
@@ -61,8 +63,8 @@ export function Drivers({ drivers, reload }: { drivers: AdminDriver[]; reload: (
               <tr key={d.id} className="cursor-pointer hover:bg-white/[.03]" onClick={() => setOpen(d.id)}>
                 <td className="py-3 font-medium">
                   <span className="flex items-center gap-2">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-gold/15 text-gold">{d.full_name.charAt(0).toUpperCase()}</span>
-                    {d.full_name}{d.is_online && <span className="h-2 w-2 rounded-full bg-emerald-400" title="Online" />}
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-brand/15 text-brand">{d.full_name.charAt(0).toUpperCase()}</span>
+                    {d.full_name}{d.verified && <BadgeCheck size={15} className="text-sky-400" aria-label="Verified" />}{d.is_online && <span className="h-2 w-2 rounded-full bg-emerald-400" title="Online" />}{d.docs_pending && <Badge tone="blue">docs to check</Badge>}
                   </span>
                 </td>
                 <td>{d.phone}</td><td className="font-mono text-xs">{d.licence_no}</td><td>{d.experience_years} y</td><td>{d.city}</td><td>{d.trips}</td>
@@ -111,19 +113,19 @@ function DriverDrawer({ id, onClose, onChange }: { id: string; onClose: () => vo
         {!d ? <div className="card mt-10 h-60 animate-pulse" /> : (
           <div className="space-y-5">
             <div className="flex items-center gap-4">
-              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold text-2xl font-bold text-ink">{d.profile.full_name.charAt(0).toUpperCase()}</span>
+              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand text-2xl font-bold text-ink">{d.profile.full_name.charAt(0).toUpperCase()}</span>
               <div>
                 <h2 className="text-xl font-bold">{d.profile.full_name}</h2>
                 <p className="flex flex-wrap items-center gap-2 text-sm text-gray-400">
                   <Badge tone={statusTone[d.profile.status]}>{d.profile.status}</Badge>
                   {d.profile.is_online ? <Badge tone="green">online</Badge> : <Badge tone="gray">offline</Badge>}
-                  {d.profile.rating && <span className="flex items-center gap-1"><Star size={12} className="fill-gold text-gold" />{d.profile.rating} ({d.profile.rating_count})</span>}
+                  {d.profile.rating && <span className="flex items-center gap-1"><Star size={12} className="fill-brand text-brand" />{d.profile.rating} ({d.profile.rating_count})</span>}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-sm">
-              {[["Mobile", d.profile.phone ? <a key="p" className="flex items-center gap-1 text-gold" href={`tel:${d.profile.phone}`}><Phone size={12} />{d.profile.phone}</a> : "—"],
+              {[["Mobile", d.profile.phone ? <a key="p" className="flex items-center gap-1 text-brand" href={`tel:${d.profile.phone}`}><Phone size={12} />{d.profile.phone}</a> : "—"],
                 ["Licence", <span key="l" className="font-mono">{d.profile.licence_no}</span>], ["Experience", `${d.profile.experience_years} years`],
                 ["Drives", d.profile.can_drive.join(" & ")], ["City", d.profile.city], ["Joined", new Date(d.profile.joined).toLocaleDateString("en-IN")]].map(([k, v]) => (
                 <div key={k as string} className="rounded-xl border border-line p-3"><p className="label">{k}</p><div>{v}</div></div>
@@ -133,11 +135,11 @@ function DriverDrawer({ id, onClose, onChange }: { id: string; onClose: () => vo
             <div className="card space-y-3">
               <p className="label">Money from this driver&apos;s trips</p>
               <Row k={`Customers paid (${d.trips} trips)`} v={rupees(d.gross)} />
-              <Row k="Driver kept" v={rupees(d.earned)} tone="text-gold" />
+              <Row k="Driver kept" v={rupees(d.earned)} tone="text-brand" />
               <Row k="Saarthi commission" v={rupees(d.commission)} tone="text-emerald-400" />
               <div className="flex items-center justify-between rounded-xl bg-white/5 p-3">
-                <span className="flex items-center gap-2 font-semibold"><HandCoins size={16} className="text-gold" /> Still owes Saarthi</span>
-                <span className={`text-xl font-bold ${d.owes > 0 ? "text-red-400" : "text-emerald-400"}`}>{rupees(d.owes)}</span>
+                <span className="flex items-center gap-2 font-semibold"><HandCoins size={16} className="text-brand" /> {d.owes < 0 ? "Saarthi owes driver" : "Driver owes Saarthi"}</span>
+                <span className={`text-xl font-bold ${d.owes > 0 ? "text-red-400" : "text-emerald-400"}`}>{rupees(Math.abs(d.owes))}</span>
               </div>
             </div>
 
@@ -150,13 +152,15 @@ function DriverDrawer({ id, onClose, onChange }: { id: string; onClose: () => vo
                 </div>
                 <input className="input" placeholder="Note (optional), e.g. UPI ref" value={note} onChange={(e) => setNote(e.target.value)} />
                 <div className="flex gap-2">
-                  <button className="btn-gold flex-1">Record payment</button>
+                  <button className="btn-brand flex-1">Record payment</button>
                   <button type="button" className="btn-ghost" onClick={() => setAmount(String(d.owes / 100))}>Full amount</button>
                 </div>
                 {msg && <Notice kind={msg.ok ? "ok" : "error"}>{msg.t}</Notice>}
               </form>
             )}
             {d.owes <= 0 && msg?.ok && <Notice kind="ok">{msg.t}</Notice>}
+            {d.owes < 0 && <PayoutForm driverId={id} owedToDriver={-d.owes} onDone={() => { load(); onChange(); }} />}
+            <DocsReview driverId={id} onChange={onChange} />
 
             <div className="card">
               <p className="mb-2 font-semibold">Account history</p>
@@ -164,7 +168,7 @@ function DriverDrawer({ id, onClose, onChange }: { id: string; onClose: () => vo
               <ul className="divide-y divide-line text-sm">
                 {d.ledger.map((l) => (
                   <li key={l.id} className="flex justify-between py-2">
-                    <span>{l.kind === "commission" ? "Commission owed" : l.kind === "settlement" ? `Paid in (${l.method})` : "Adjustment"}
+                    <span>{l.kind === "commission" ? (l.amount_paise > 0 ? "Commission owed (cash trip)" : "Owed to driver (UPI / promo)") : l.kind === "settlement" ? (l.amount_paise < 0 ? `Driver paid in (${l.method})` : `Paid to driver (${l.method})`) : "Adjustment"}
                       <span className="block text-xs text-gray-500">{new Date(l.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}{l.note ? ` · ${l.note}` : ""}</span></span>
                     <span className={l.amount_paise > 0 ? "text-red-400" : "text-emerald-400"}>{l.amount_paise > 0 ? "+" : "−"}{rupees(Math.abs(l.amount_paise))}</span>
                   </li>

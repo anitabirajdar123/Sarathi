@@ -9,3 +9,7 @@ export const supabase = createBrowserClient(
   url ?? "https://placeholder.supabase.co",
   key ?? "placeholder",
 );
+
+/** Public URL of a driver's photo (stored in the public "driver-photos" bucket). */
+export const photoUrl = (path: string | null | undefined) =>
+  path ? supabase.storage.from("driver-photos").getPublicUrl(path).data.publicUrl : null;

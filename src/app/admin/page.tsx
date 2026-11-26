@@ -9,13 +9,17 @@ import { Live } from "@/components/admin/Live";
 import { Drivers, type AdminDriver } from "@/components/admin/Drivers";
 import { Trips } from "@/components/admin/Trips";
 import { Pricing } from "@/components/admin/Pricing";
+import { Promos } from "@/components/admin/Promos";
+import { MonthlyAdmin } from "@/components/admin/Monthly";
+import { SosAlerts, type AlertCounts } from "@/components/admin/Alerts";
 
-type Tab = "overview" | "live" | "drivers" | "trips" | "pricing";
+type Tab = "overview" | "live" | "drivers" | "trips" | "monthly" | "pricing";
 
 export default function AdminPage() {
   const { profile, loading, signOut } = useSession("admin");
   const [tab, setTab] = useState<Tab>("overview");
   const [drivers, setDrivers] = useState<AdminDriver[]>([]);
+  const [counts, setCounts] = useState<AlertCounts>({ docs_waiting: 0, monthly_waiting: 0, sos: 0 });
   const [err, setErr] = useState<string | null>(null);
 
   const loadDrivers = useCallback(async () => {
@@ -32,18 +36,22 @@ export default function AdminPage() {
   return (
     <Shell title="Admin" onSignOut={signOut}>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
-        <div><h1 className="text-2xl font-bold">Control room</h1><p className="text-sm text-gray-400">Everything happening on Saarthi, live.</p></div>
+        <div><h1 className="text-3xl font-bold">Control <span className="text-gradient">room</span></h1><p className="text-sm text-gray-400">Everything happening on Saarthi, live.</p></div>
+        {counts.sos > 0 && <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-bold text-white">{counts.sos} SOS open</span>}
       </div>
+      <SosAlerts onCounts={setCounts} />
       {err && <div className="mb-4"><Notice>{err}</Notice></div>}
       <Tabs<Tab> value={tab} onChange={setTab} tabs={[
         { id: "overview", label: "Overview" }, { id: "live", label: "Live map" },
-        { id: "drivers", label: "Drivers", badge: pending }, { id: "trips", label: "Trips" }, { id: "pricing", label: "Pricing" },
+        { id: "drivers", label: "Drivers", badge: pending + counts.docs_waiting }, { id: "trips", label: "Trips" },
+        { id: "monthly", label: "Monthly", badge: counts.monthly_waiting }, { id: "pricing", label: "Pricing & promos" },
       ]} />
       {tab === "overview" && <Overview onError={setErr} />}
       {tab === "live" && <Live />}
       {tab === "drivers" && <Drivers drivers={drivers} reload={loadDrivers} />}
       {tab === "trips" && <Trips />}
-      {tab === "pricing" && <Pricing />}
+      {tab === "monthly" && <MonthlyAdmin drivers={drivers} />}
+      {tab === "pricing" && <div className="space-y-6"><Promos /><Pricing /></div>}
     </Shell>
   );
 }

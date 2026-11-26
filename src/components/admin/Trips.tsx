@@ -7,8 +7,8 @@ import { STATUS_LABEL, TRIP_LABEL, type Booking, type BookingStatus } from "@/li
 import { Badge } from "@/components/ui/Stat";
 
 type Row = Booking & { platform_fee_paise: number | null; driver_earning_paise: number | null; payment_method: string };
-const tone: Record<BookingStatus, "gold" | "blue" | "green" | "gray" | "red"> = {
-  requested: "gold", accepted: "blue", started: "blue", completed: "green", cancelled: "red",
+const tone: Record<BookingStatus, "brand" | "blue" | "green" | "gray" | "red"> = {
+  requested: "brand", accepted: "blue", started: "blue", completed: "green", cancelled: "red",
 };
 
 export function Trips() {
@@ -56,7 +56,7 @@ export function Trips() {
 
       <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
         <div className="rounded-xl border border-line p-3"><p className="label">Fares (completed)</p><p className="text-lg font-bold">{rupees(sum("quoted_paise"))}</p></div>
-        <div className="rounded-xl border border-line p-3"><p className="label">Drivers&apos; share</p><p className="text-lg font-bold text-gold">{rupees(sum("driver_earning_paise"))}</p></div>
+        <div className="rounded-xl border border-line p-3"><p className="label">Drivers&apos; share</p><p className="text-lg font-bold text-brand">{rupees(sum("driver_earning_paise"))}</p></div>
         <div className="rounded-xl border border-line p-3"><p className="label">Saarthi share</p><p className="text-lg font-bold text-emerald-400">{rupees(sum("platform_fee_paise"))}</p></div>
       </div>
 
@@ -71,7 +71,7 @@ export function Trips() {
                 <td className="max-w-[220px] truncate">{t.pickup_address}</td>
                 <td><Badge tone={tone[t.status]}>{STATUS_LABEL[t.status]}</Badge></td>
                 <td className="text-right font-medium">{rupees(t.quoted_paise)}</td>
-                <td className="text-right text-gold">{t.driver_earning_paise != null ? rupees(t.driver_earning_paise) : "—"}</td>
+                <td className="text-right text-brand">{t.driver_earning_paise != null ? rupees(t.driver_earning_paise) : "—"}</td>
                 <td className="text-right text-emerald-400">{t.platform_fee_paise != null ? rupees(t.platform_fee_paise) : "—"}</td>
                 <td className="uppercase text-gray-400">{t.status === "completed" ? t.payment_method : ""}</td>
               </tr>

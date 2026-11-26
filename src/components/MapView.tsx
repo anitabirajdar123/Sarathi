@@ -14,7 +14,7 @@ const icon = (kind: Pin["kind"]) =>
       kind === "busy"
         ? `<div style="width:34px;height:34px;border-radius:50%;background:#3b82f6;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(59,130,246,.25);font-size:17px">🚙</div>`
         : kind === "driver"
-        ? `<div style="width:34px;height:34px;border-radius:50%;background:#f5b544;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(245,181,68,.25);font-size:17px">🚗</div>`
+        ? `<div style="width:34px;height:34px;border-radius:50%;background:#a78bfa;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(167,139,250,.25);font-size:17px">🚗</div>`
         : kind === "pickup"
           ? `<div style="width:34px;height:34px;border-radius:50%;background:#22c55e;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(34,197,94,.25);font-size:16px">📍</div>`
           : `<div style="width:18px;height:18px;margin:8px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 0 0 8px rgba(59,130,246,.3)"></div>`,
@@ -37,7 +37,7 @@ export default function MapView({ center, pins, radiusM, height = 420 }:
       />
       <Recenter lat={center.lat} lng={center.lng} />
       {radiusM ? <Circle center={[center.lat, center.lng]} radius={radiusM}
-        pathOptions={{ color: "#f5b544", weight: 1, fillOpacity: 0.04 }} /> : null}
+        pathOptions={{ color: "#a78bfa", weight: 1, fillOpacity: 0.04 }} /> : null}
       {pins.map((p) => (
         <Marker key={p.id} position={[p.lat, p.lng]} icon={icon(p.kind)}>
           <Tooltip direction="top" offset={[0, -14]}>{p.label}</Tooltip>

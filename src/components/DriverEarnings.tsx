@@ -31,7 +31,7 @@ export function DriverEarnings() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={Wallet} label="Today" value={rupees(d.today)} tone="gold" hint={`${d.today_trips} trips`} />
+        <Stat icon={Wallet} label="Today" value={rupees(d.today)} tone="brand" hint={`${d.today_trips} trips`} />
         <Stat icon={CalendarDays} label="Last 7 days" value={rupees(d.week)} />
         <Stat icon={CalendarRange} label="This month" value={rupees(d.month)} />
         <Stat icon={Clock} label="Per hour driving" value={rupees(perHour)} hint={`${d.hours} hours on trips`} />
@@ -42,12 +42,12 @@ export function DriverEarnings() {
         <div className="card space-y-3">
           <p className="label">How your money works</p>
           <div className="flex justify-between text-sm"><span className="text-gray-400">Customers paid ({d.trips} trips)</span><b>{rupees(d.total + d.commission)}</b></div>
-          <div className="flex justify-between text-sm"><span className="text-gray-400">You keep</span><b className="text-gold">{rupees(d.total)}</b></div>
+          <div className="flex justify-between text-sm"><span className="text-gray-400">You keep</span><b className="text-brand">{rupees(d.total)}</b></div>
           <div className="flex justify-between text-sm"><span className="text-gray-400">Saarthi commission</span><b className="text-emerald-400">{rupees(d.commission)}</b></div>
           <div className={`rounded-xl p-3 ${d.owes > 0 ? "bg-red-500/10" : "bg-emerald-500/10"}`}>
-            <p className="flex items-center gap-2 text-sm font-semibold"><HandCoins size={16} /> {d.owes > 0 ? "To pay Saarthi" : "All settled"}</p>
-            <p className={`text-2xl font-bold ${d.owes > 0 ? "text-red-300" : "text-emerald-300"}`}>{rupees(Math.max(d.owes, 0))}</p>
-            <p className="text-xs text-gray-400">Commission on trips where the customer paid you in cash.</p>
+            <p className="flex items-center gap-2 text-sm font-semibold"><HandCoins size={16} /> {d.owes > 0 ? "To pay Saarthi" : d.owes < 0 ? "Saarthi owes you" : "All settled"}</p>
+            <p className={`text-2xl font-bold ${d.owes > 0 ? "text-red-300" : "text-emerald-300"}`}>{rupees(Math.abs(d.owes))}</p>
+            <p className="text-xs text-gray-400">Cash trips add Saarthi&apos;s commission; UPI trips and promo discounts add what Saarthi owes you.</p>
           </div>
         </div>
       </div>
@@ -56,10 +56,10 @@ export function DriverEarnings() {
         <Stat icon={Route} label="All trips" value={d.trips} hint={`${rupees(d.total)} earned in total`} />
         <Stat icon={Percent} label="Completion rate" value={d.acceptance != null ? `${d.acceptance}%` : "—"} hint="accepted trips you finished" />
         <div className="card">
-          <Star size={18} className="text-gold" /><p className="label mt-3">Ratings</p>
+          <Star size={18} className="text-brand" /><p className="label mt-3">Ratings</p>
           {ratings === 0 ? <p className="text-sm text-gray-500">No ratings yet</p> : [5, 4, 3, 2, 1].map((s) => (
             <div key={s} className="flex items-center gap-2 text-xs"><span className="w-3">{s}</span>
-              <div className="h-1.5 flex-1 rounded-full bg-white/5"><div className="h-full rounded-full bg-gold" style={{ width: `${((d.stars[s] ?? 0) / ratings) * 100}%` }} /></div>
+              <div className="h-1.5 flex-1 rounded-full bg-white/5"><div className="h-full rounded-full bg-brand" style={{ width: `${((d.stars[s] ?? 0) / ratings) * 100}%` }} /></div>
               <span className="w-5 text-right text-gray-500">{d.stars[s] ?? 0}</span></div>
           ))}
         </div>
@@ -71,7 +71,7 @@ export function DriverEarnings() {
         <ul className="divide-y divide-line text-sm">
           {d.ledger.map((l, i) => (
             <li key={i} className="flex justify-between py-2">
-              <span>{l.kind === "commission" ? "Commission on a cash trip" : l.kind === "settlement" ? `You paid Saarthi (${l.method})` : "Adjustment"}
+              <span>{l.kind === "commission" ? (l.amount_paise > 0 ? "Commission on a cash trip" : "Saarthi owes you for a trip") : l.kind === "settlement" ? (l.amount_paise < 0 ? `You paid Saarthi (${l.method})` : `Saarthi paid you (${l.method})`) : "Adjustment"}
                 <span className="block text-xs text-gray-500">{new Date(l.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}{l.note ? ` · ${l.note}` : ""}</span></span>
               <span className={l.amount_paise > 0 ? "text-red-300" : "text-emerald-300"}>{l.amount_paise > 0 ? "+" : "−"}{rupees(Math.abs(l.amount_paise))}</span>
             </li>

@@ -64,7 +64,7 @@ function LoginForm() {
 
   const tab = (m: typeof mode, label: string) => (
     <button type="button" onClick={() => { setMode(m); setErr(null); setOk(null); }}
-      className={`flex-1 rounded-lg py-2 text-sm font-medium ${mode === m ? "bg-gold text-ink" : "text-gray-400"}`}>{label}</button>
+      className={`flex-1 rounded-lg py-2 text-sm font-medium ${mode === m ? "bg-gradient-to-r from-brand-strong to-pink text-white" : "text-gray-400"}`}>{label}</button>
   );
 
   return (
@@ -80,8 +80,8 @@ function LoginForm() {
             <input id="pw" className="input" type="password" autoComplete={newAccount ? "new-password" : "current-password"} required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
           {err && <Notice>{err}</Notice>}
           {ok && <Notice kind="ok">{ok}</Notice>}
-          <button className="btn-gold w-full" disabled={busy || !isConfigured}>{busy ? "Please wait…" : newAccount ? "Create account" : "Sign in"}</button>
-          <button type="button" className="w-full text-sm text-gray-400 hover:text-gold" onClick={() => { setNewAccount(!newAccount); setErr(null); setOk(null); }}>
+          <button className="btn-brand w-full" disabled={busy || !isConfigured}>{busy ? "Please wait…" : newAccount ? "Create account" : "Sign in"}</button>
+          <button type="button" className="w-full text-sm text-gray-400 hover:text-brand" onClick={() => { setNewAccount(!newAccount); setErr(null); setOk(null); }}>
             {newAccount ? "Already have an account? Sign in" : "New here? Create an account"}
           </button>
         </form>
@@ -90,7 +90,7 @@ function LoginForm() {
           <div><label className="label" htmlFor="email2">Email</label>
             <input id="email2" className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           {err && <Notice>{err}</Notice>}
-          <button className="btn-gold w-full" disabled={busy || !isConfigured}>{busy ? "Sending…" : "Email me a sign-in link"}</button>
+          <button className="btn-brand w-full" disabled={busy || !isConfigured}>{busy ? "Sending…" : "Email me a sign-in link"}</button>
         </form>
       ) : (
         <div className="mt-5 space-y-4">
@@ -100,8 +100,8 @@ function LoginForm() {
       )}
       <p className="mt-5 border-t border-line pt-4 text-center text-sm text-gray-400">
         {as === "driver"
-          ? <>Need a driver instead? <a className="text-gold" href="/login">Sign in as customer</a></>
-          : <>Want to earn as a driver? <a className="text-gold" href="/login?as=driver">Sign in as driver</a></>}
+          ? <>Need a driver instead? <a className="text-brand" href="/login">Sign in as customer</a></>
+          : <>Want to earn as a driver? <a className="text-brand" href="/login?as=driver">Sign in as driver</a></>}
       </p>
     </div>
   );

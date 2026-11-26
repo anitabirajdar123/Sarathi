@@ -26,7 +26,7 @@ The app shows the nearest online drivers on a live map with their price, and the
 
 ## Setup (10 minutes)
 1. Create a free project at https://supabase.com (your personal account).
-2. **SQL Editor → New query** → paste all of `supabase/migrations/0001_init.sql` → **Run**.
+2. **SQL Editor → New query** → run each file in `supabase/migrations/` **in order**: `0001_init.sql`, `0002_money_and_dashboards.sql`, `0003_safety_schedule_kyc_wallet.sql`.
 3. **Authentication → Sign In / Providers → Email**: turn **Confirm email** OFF (so password accounts work without an email), and in **URL Configuration** set Site URL `http://localhost:3000` and add Redirect URL `http://localhost:3000/**` (for the email-link sign-in).
 4. **Project Settings → API**: copy the Project URL and the anon / publishable key.
 5. Copy `.env.local.example` to `.env.local` and paste them in.
@@ -52,6 +52,12 @@ Use two browsers (or one normal + one private window):
 6. Window B → shows *Driver on the way* + the 4-digit code.
 7. Window A → type the code → Start trip → End trip.
 8. Window B → rate the trip.
+
+## More features
+- **Safety:** SOS button (alerts the admin control room with location), public live-trip link for family (`/track/<token>`), driver photo + verified badge.
+- **Scheduling:** book for a later date/time; **monthly driver** plans that the admin offers to a driver and the driver accepts.
+- **Driver KYC:** photo (public bucket), licence and Aadhaar (private bucket, admin sees 5-minute signed links); blue Verified badge when all three are approved.
+- **Money:** promo codes (admin-managed), wallet, refer-a-friend (₹50 each after the first trip), printable receipt (`/invoice/<id>`). Every trip splits into driver share and Saarthi commission; a driver ledger tracks who owes whom (cash vs UPI vs discounts) with admin settlements and payouts.
 
 ## Next steps (roadmap)
 - Phone OTP (needs an SMS provider such as MSG91 / Twilio)

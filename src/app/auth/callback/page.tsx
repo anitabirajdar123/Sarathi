@@ -26,7 +26,7 @@ function Callback() {
   }, [params, router]);
 
   return err
-    ? <div className="card max-w-sm space-y-4"><Notice>{err}</Notice><a className="btn-gold w-full" href="/login">Back to sign in</a></div>
+    ? <div className="card max-w-sm space-y-4"><Notice>{err}</Notice><a className="btn-brand w-full" href="/login">Back to sign in</a></div>
     : <p className="text-gray-400">Signing you in…</p>;
 }
 

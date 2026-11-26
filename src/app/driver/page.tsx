@@ -1,16 +1,20 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Power, Wallet, Navigation } from "lucide-react";
+import { Power, Wallet, Navigation, CalendarDays, BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useLocation, useSession } from "@/lib/useSession";
 import { DEFAULT_POS, errText, rupees } from "@/lib/format";
-import { STATUS_LABEL, TRIP_LABEL, type Booking } from "@/lib/types";
+import { isNow, STATUS_LABEL, TRIP_LABEL, type Booking } from "@/lib/types";
 import { Shell, Notice } from "@/components/Shell";
 import { Tabs } from "@/components/ui/Stat";
 import { DriverEarnings } from "@/components/DriverEarnings";
 import { Map } from "@/components/Map";
+import { SosButton } from "@/components/customer/Safety";
+import { DriverDocuments } from "@/components/driver/Documents";
+import { MonthlyOffers } from "@/components/driver/MonthlyOffers";
 
-interface DriverRow { status: "pending" | "approved" | "blocked"; is_online: boolean; rating_sum: number; rating_count: number }
+interface DriverRow { status: "pending" | "approved" | "blocked"; is_online: boolean; rating_sum: number; rating_count: number; verified: boolean }
+type Tab = "drive" | "earnings" | "documents";
 
 export default function DriverPage() {
   const { profile, loading, signOut } = useSession();
@@ -18,14 +22,14 @@ export default function DriverPage() {
   const [open, setOpen] = useState<Booking[]>([]);
   const [mine, setMine] = useState<Booking[]>([]);
   const [err, setErr] = useState<string | null>(null);
-  const [tab, setTab] = useState<"drive" | "earnings">("drive");
+  const [tab, setTab] = useState<Tab>("drive");
   const online = me?.is_online ?? false;
   const { pos } = useLocation(online);
   const here = pos ?? DEFAULT_POS;
 
   const load = useCallback(async () => {
     if (!profile) return;
-    const { data: d } = await supabase.from("drivers").select("status, is_online, rating_sum, rating_count").eq("id", profile.id).maybeSingle();
+    const { data: d } = await supabase.from("drivers").select("status, is_online, rating_sum, rating_count, verified").eq("id", profile.id).maybeSingle();
     setMe(d as DriverRow | null);
     const [o, m] = await Promise.all([
       supabase.from("bookings").select("*").eq("status", "requested").order("created_at").limit(20),
@@ -70,7 +74,10 @@ export default function DriverPage() {
   if (loading || me === undefined) return <Shell title="Driver"><div className="card h-40 animate-pulse" /></Shell>;
   if (me === null) return <Shell title="Driver" onSignOut={signOut}><Register onDone={load} /></Shell>;
 
-  const current = mine.find((b) => b.status === "accepted" || b.status === "started");
+  // "Now" = running, or accepted and due within the hour. Later scheduled trips wait in Upcoming.
+  const current = mine.find((b) => b.status === "started") ?? mine.find((b) => b.status === "accepted" && isNow(b));
+  const upcoming = mine.filter((b) => b.status === "accepted" && !isNow(b) && b.id !== current?.id)
+    .sort((a, b) => +new Date(a.scheduled_for!) - +new Date(b.scheduled_for!));
   const done = mine.filter((b) => b.status === "completed");
   const today = done.filter((b) => new Date(b.completed_at!).toDateString() === new Date().toDateString());
   // The server saves the driver's share on each completed trip.
@@ -78,16 +85,22 @@ export default function DriverPage() {
 
   return (
     <Shell title="Driver" onSignOut={signOut}>
-      <Tabs<"drive" | "earnings"> value={tab} onChange={setTab} tabs={[{ id: "drive", label: "Drive" }, { id: "earnings", label: "Earnings & account" }]} />
+      <div className="mb-4 flex items-center gap-2">
+        <h1 className="text-2xl font-bold">Hi, <span className="text-gradient">{profile?.full_name.split(" ")[0]}</span></h1>
+        {me.verified && <span className="flex items-center gap-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-xs text-sky-300"><BadgeCheck size={14} /> Verified</span>}
+      </div>
+      <Tabs<Tab> value={tab} onChange={setTab} tabs={[{ id: "drive", label: "Drive" }, { id: "earnings", label: "Earnings & account" }, { id: "documents", label: me.verified ? "Documents" : "Documents · get verified" }]} />
       {tab === "earnings" && <DriverEarnings />}
+      {tab === "documents" && <DriverDocuments verified={me.verified} />}
       {tab === "drive" && (<>
       {me.status !== "approved" && (
-        <div className="card mb-6 border-gold/40">
-          <p className="font-semibold text-gold">{me.status === "pending" ? "Your documents are being checked" : "Your account is blocked"}</p>
+        <div className="card mb-6 border-brand/40">
+          <p className="font-semibold text-brand">{me.status === "pending" ? "Your documents are being checked" : "Your account is blocked"}</p>
           <p className="text-sm text-gray-400">{me.status === "pending" ? "You can go online once the Saarthi team approves you." : "Contact support."}</p>
         </div>
       )}
       {err && <div className="mb-4"><Notice>{err}</Notice></div>}
+      {profile && <MonthlyOffers myId={profile.id} />}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <button onClick={toggle} disabled={me.status !== "approved"}
@@ -111,12 +124,27 @@ export default function DriverPage() {
               <ul className="space-y-3">
                 {online && open.map((b) => (
                   <li key={b.id} className="rounded-xl border border-line p-3">
-                    <div className="flex justify-between"><span className="font-semibold">{TRIP_LABEL[b.trip_type]} · {b.hours} h</span><span className="font-bold text-gold">{rupees(b.quoted_paise)}</span></div>
+                    {b.scheduled_for && <p className="mb-1 flex items-center gap-1 text-xs text-sky-300"><CalendarDays size={12} /> Scheduled · {new Date(b.scheduled_for).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</p>}
+                    <div className="flex justify-between"><span className="font-semibold">{TRIP_LABEL[b.trip_type]} · {b.hours} h</span><span className="font-bold text-brand">{rupees(b.quoted_paise)}</span></div>
                     <p className="mt-1 text-sm text-gray-400">{b.pickup_address}</p>
-                    <button className="btn-gold mt-3 w-full" onClick={() => act("accept_booking", { p_booking: b.id })}>Accept</button>
+                    <button className="btn-brand mt-3 w-full" onClick={() => act("accept_booking", { p_booking: b.id })}>Accept</button>
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+          {upcoming.length > 0 && (
+            <div className="card">
+              <h2 className="mb-2 flex items-center gap-2 font-semibold"><CalendarDays size={16} className="text-brand" /> My upcoming trips</h2>
+              <ul className="divide-y divide-line text-sm">
+                {upcoming.map((b) => (
+                  <li key={b.id} className="py-2">
+                    <p className="font-medium">{new Date(b.scheduled_for!).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</p>
+                    <p className="text-gray-400">{TRIP_LABEL[b.trip_type]} · {b.hours} h · {b.pickup_address}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-gray-500">A scheduled trip moves to &quot;Current trip&quot; one hour before it starts.</p>
             </div>
           )}
         </div>
@@ -133,24 +161,26 @@ function CurrentTrip({ b, act }: { b: Booking; act: (fn: string, a: Record<strin
       <p className="label">Current trip</p>
       <h2 className="text-xl font-bold">{STATUS_LABEL[b.status]}</h2>
       <p className="text-sm text-gray-400">{TRIP_LABEL[b.trip_type]} · {b.hours} h</p>
-      <p className="flex items-start gap-2 text-sm"><Navigation size={16} className="mt-0.5 text-gold" /> {b.pickup_address}</p>
-      <p className="text-3xl font-bold text-gold">{rupees(b.quoted_paise)}</p>
+      <p className="flex items-start gap-2 text-sm"><Navigation size={16} className="mt-0.5 text-brand" /> {b.pickup_address}</p>
+      <p className="text-3xl font-bold text-gradient">{rupees(b.quoted_paise - (b.discount_paise ?? 0))}</p>
+      {b.discount_paise ? <p className="text-xs text-emerald-300">Customer used a promo ({rupees(b.discount_paise)} off). Saarthi pays that part; your share is unchanged.</p> : null}
       {b.status === "accepted" ? (
         <>
           <label className="label" htmlFor="code">Customer&apos;s 4-digit start code</label>
           <input id="code" className="input text-center font-mono text-2xl tracking-[0.5em]" maxLength={4} inputMode="numeric"
             value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
-          <button className="btn-gold w-full" disabled={code.length !== 4} onClick={() => act("start_trip", { p_booking: b.id, p_code: code })}>Start trip</button>
+          <button className="btn-brand w-full" disabled={code.length !== 4} onClick={() => act("start_trip", { p_booking: b.id, p_code: code })}>Start trip</button>
           <button className="btn-ghost w-full" onClick={() => act("cancel_booking", { p_booking: b.id, p_reason: "Driver cancelled" })}>Cancel</button>
         </>
       ) : (
         <>
+          <SosButton bookingId={b.id} />
           <p className="text-sm text-gray-400">End the trip — how did the customer pay?</p>
           <div className="grid grid-cols-2 gap-2">
-            <button className="btn-gold" onClick={() => act("complete_trip", { p_booking: b.id, p_method: "cash" })}>Cash</button>
+            <button className="btn-brand" onClick={() => act("complete_trip", { p_booking: b.id, p_method: "cash" })}>Cash</button>
             <button className="btn-ghost" onClick={() => act("complete_trip", { p_booking: b.id, p_method: "upi" })}>UPI</button>
           </div>
-          <p className="text-xs text-gray-500">Cash: you keep the money and owe Saarthi its commission.</p>
+          <p className="text-xs text-gray-500">Cash: you keep what the customer pays and settle the commission with Saarthi. UPI: Saarthi receives it and pays you your share.</p>
         </>
       )}
     </div>
@@ -184,7 +214,7 @@ function Register({ onDone }: { onDone: () => void }) {
         <label className="flex items-center gap-2"><input type="checkbox" checked={f.auto} onChange={(e) => setF({ ...f, auto: e.target.checked })} /> Automatic</label>
       </div>
       {err && <Notice>{err}</Notice>}
-      <button className="btn-gold w-full">Submit for approval</button>
+      <button className="btn-brand w-full">Submit for approval</button>
     </form>
   );
 }

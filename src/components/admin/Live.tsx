@@ -26,7 +26,7 @@ export function Live() {
   const centre = pins[0] ?? DEFAULT_POS;
   const free = d?.drivers.filter((x) => !x.busy).length ?? 0;
   const tiles: [string, number, string][] = [
-    ["Free drivers", free, "text-gold"],
+    ["Free drivers", free, "text-brand"],
     ["On a trip", (d?.drivers.length ?? 0) - free, "text-blue-400"],
     ["Customers waiting", d?.requests.length ?? 0, "text-emerald-400"],
     ["Driver on the way", d?.on_way ?? 0, "text-gray-200"],
@@ -45,7 +45,7 @@ export function Live() {
           <ul className="space-y-2 text-sm">
             {d?.requests.map((r) => (
               <li key={r.id} className="rounded-lg border border-line p-2.5">
-                <div className="flex justify-between gap-2"><span className="truncate">{r.address}</span><span className="text-gold">{rupees(r.fare)}</span></div>
+                <div className="flex justify-between gap-2"><span className="truncate">{r.address}</span><span className="text-brand">{rupees(r.fare)}</span></div>
                 <p className={`text-xs ${r.waiting_s > 300 ? "text-red-400" : "text-gray-500"}`}>waiting {Math.floor(r.waiting_s / 60)} min {r.waiting_s % 60} s</p>
               </li>
             ))}

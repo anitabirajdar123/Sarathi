@@ -65,9 +65,9 @@ export function Pricing() {
                 {num(r, "platform_fee_pct", "Saarthi commission", "%", 50)}
               </div>
               <p className="rounded-xl bg-white/5 p-3 text-sm text-gray-400">
-                Example: {r.base_hours + 2} hours = <b className="text-white">{rupees(sample)}</b> → driver keeps <b className="text-gold">{rupees(sample - fee)}</b>, Saarthi gets <b className="text-emerald-400">{rupees(fee)}</b>
+                Example: {r.base_hours + 2} hours = <b className="text-white">{rupees(sample)}</b> → driver keeps <b className="text-brand">{rupees(sample - fee)}</b>, Saarthi gets <b className="text-emerald-400">{rupees(fee)}</b>
               </p>
-              <button className="btn-gold w-full" onClick={() => save(r)}>Save {TRIP_LABEL[r.trip_type]}</button>
+              <button className="btn-brand w-full" onClick={() => save(r)}>Save {TRIP_LABEL[r.trip_type]}</button>
             </div>
           );
         })}
